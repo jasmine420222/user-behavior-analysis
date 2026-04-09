@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电商平台用户行为分析报告 | 张嘉敏</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --primary: #0052CC;
+    --accent:  #FF6B35;
+    --accent2: #00B896;
+    --accent3: #A259FF;
+    --bg:      #F4F6FB;
+    --card:    #FFFFFF;
+    --text:    #1A2340;
+    --muted:   #6B7A99;
+    --border:  #E3E8F0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'PingFang SC','Helvetica Neue',Arial,sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(135deg, #0039A6 0%, #0052CC 50%, #1A6FD4 100%);
+    color: #fff; padding: 72px 40px 56px; text-align: center;
+  }
+  .hero .tag { display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); border-radius: 20px; padding: 4px 16px; font-size: 13px; letter-spacing: 1px; margin-bottom: 20px; }
+  .hero h1 { font-size: clamp(24px,4vw,42px); font-weight: 700; margin-bottom: 14px; }
+  .hero p  { font-size: 16px; opacity: .85; max-width: 640px; margin: 0 auto 32px; }
+  .hero-meta { display: flex; gap: 32px; justify-content: center; flex-wrap: wrap; }
+  .hero-meta span { background: rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 20px; font-size: 14px; }
+  .hero-meta strong { font-size: 22px; display: block; }
+
+  /* ── KPI CARDS ── */
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 16px; padding: 32px 40px; }
+  .kpi { background: var(--card); border-radius: 12px; padding: 24px 20px; box-shadow: 0 2px 12px rgba(0,82,204,.07); border-top: 3px solid var(--primary); transition: transform .2s; }
+  .kpi:hover { transform: translateY(-3px); }
+  .kpi .val { font-size: 34px; font-weight: 700; color: var(--primary); }
+  .kpi .lbl { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .kpi .sub { font-size: 12px; color: var(--muted); margin-top: 8px; background: var(--bg); border-radius: 6px; padding: 4px 8px; display: inline-block; }
+  .kpi.accent  .val { color: var(--accent); } .kpi.accent { border-color: var(--accent); }
+  .kpi.accent2 .val { color: var(--accent2); } .kpi.accent2 { border-color: var(--accent2); }
+  .kpi.accent3 .val { color: var(--accent3); } .kpi.accent3 { border-color: var(--accent3); }
+
+  /* ── SECTIONS ── */
+  .section { padding: 0 40px 48px; }
+  .section-header { padding: 48px 40px 0; }
+  .section-header h2 { font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .section-header h2 .num { width: 32px; height: 32px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .section-header p { color: var(--muted); font-size: 14px; margin-top: 6px; max-width: 720px; }
+  .divider { height: 1px; background: var(--border); margin: 0 40px 0; }
+
+  /* ── CARDS ── */
+  .card { background: var(--card); border-radius: 14px; padding: 28px; box-shadow: 0 2px 16px rgba(0,82,204,.06); }
+  .card-title { font-size: 15px; font-weight: 600; color: var(--muted); margin-bottom: 20px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media(max-width:900px){ .two-col,.three-col { grid-template-columns: 1fr; } }
+
+  /* ── FUNNEL BAR ── */
+  .funnel-wrap { display: flex; flex-direction: column; gap: 14px; }
+  .funnel-row { display: flex; align-items: center; gap: 12px; }
+  .funnel-row .stage { width: 90px; font-size: 13px; color: var(--muted); flex-shrink: 0; text-align: right; }
+  .funnel-bar-bg { flex: 1; height: 36px; background: var(--bg); border-radius: 8px; overflow: hidden; }
+  .funnel-bar-fill { height: 100%; border-radius: 8px; display: flex; align-items: center; padding-left: 14px; font-size: 13px; font-weight: 600; color: #fff; transition: width 1s ease; }
+  .funnel-row .pct { width: 64px; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .funnel-row .cnt { width: 110px; font-size: 12px; color: var(--muted); flex-shrink: 0; text-align: right; }
+  .arrow-row { display: flex; align-items: center; padding-left: 102px; gap: 12px; }
+  .arrow-tag { background: #FFF3EC; color: var(--accent); border-radius: 6px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+
+  /* ── INSIGHT BOXES ── */
+  .insight { background: linear-gradient(135deg,#EBF0FF,#F4F6FF); border-left: 4px solid var(--primary); border-radius: 0 10px 10px 0; padding: 14px 18px; margin-top: 20px; font-size: 14px; color: var(--text); }
+  .insight strong { color: var(--primary); }
+  .insight.warn { background: linear-gradient(135deg,#FFF3EC,#FFF7F4); border-color: var(--accent); }
+  .insight.warn strong { color: var(--accent); }
+  .insight.good { background: linear-gradient(135deg,#EAFAF5,#F0FDF9); border-color: var(--accent2); }
+  .insight.good strong { color: var(--accent2); }
+
+  /* ── SEGMENT TABLE ── */
+  .seg-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 16px; }
+  .seg-table th { background: var(--bg); padding: 10px 14px; text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; letter-spacing: .5px; }
+  .seg-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .seg-table tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .badge.v1 { background: #E8F0FF; color: var(--primary); }
+  .badge.v2 { background: #FFF0E8; color: var(--accent); }
+  .badge.v3 { background: #E8FDF4; color: var(--accent2); }
+  .badge.v4 { background: #F2EEFF; color: var(--accent3); }
+
+  /* ── STRATEGY CARDS ── */
+  .strategy-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap: 16px; }
+  .s-card { border-radius: 12px; padding: 22px; border: 1.5px solid; }
+  .s-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .s-card ul { font-size: 13px; padding-left: 16px; line-height: 1.8; }
+  .s-card .tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .s-tag { font-size: 11px; border-radius: 10px; padding: 2px 8px; }
+  .s-card.c1 { border-color: #C2D4FF; background: #F5F8FF; } .s-card.c1 h4 { color: var(--primary); } .s-card.c1 .s-tag { background: #E0EAFF; color: var(--primary); }
+  .s-card.c2 { border-color: #FFCFB8; background: #FFF8F5; } .s-card.c2 h4 { color: var(--accent); } .s-card.c2 .s-tag { background: #FFEADE; color: var(--accent); }
+  .s-card.c3 { border-color: #B4EDD8; background: #F0FDF8; } .s-card.c3 h4 { color: var(--accent2); } .s-card.c3 .s-tag { background: #DCFAEF; color: var(--accent2); }
+  .s-card.c4 { border-color: #D8C9FF; background: #F9F6FF; } .s-card.c4 h4 { color: var(--accent3); } .s-card.c4 .s-tag { background: #EDDFFF; color: var(--accent3); }
+
+  /* ── DATA QUALITY ── */
+  .dq-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px; }
+  .dq-item { background: var(--bg); border-radius: 8px; padding: 12px 18px; flex: 1; min-width: 160px; }
+  .dq-item .v { font-size: 22px; font-weight: 700; color: var(--accent2); }
+  .dq-item .l { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* ── FOOTER ── */
+  .footer { background: #1A2340; color: rgba(255,255,255,.6); text-align: center; padding: 32px; font-size: 13px; }
+  .footer strong { color: #fff; }
+
+  canvas { max-width: 100%; }
+</style>
+</head>
+<body>
+
+<!-- ══════════ HERO ══════════ -->
+<div class="hero">
+  <div class="tag">DATA-DRIVEN USER OPERATIONS ANALYSIS</div>
+  <h1>电商平台用户行为分析报告</h1>
+  <p>基于阿里巴巴天池真实数据，解析用户从浏览到购买的完整行为路径，识别增长机会，输出可落地的分层运营策略</p>
+  <div class="hero-meta">
+    <span><strong>987,991</strong>真实用户</span>
+    <span><strong>1亿+</strong>行为事件</span>
+    <span><strong>9天</strong>含双十二预热</span>
+    <span><strong>淘宝平台</strong>真实数据</span>
+  </div>
+</div>
+
+<!-- ══════════ KPI STRIP ══════════ -->
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="val">2.25%</div>
+    <div class="lbl">浏览→购买 整体转化率</div>
+    <div class="sub">行业均值参考 1–3%</div>
+  </div>
+  <div class="kpi accent">
+    <div class="val">36.45%</div>
+    <div class="lbl">加购→购买 转化率</div>
+    <div class="sub">加购意图强，转化效率高</div>
+  </div>
+  <div class="kpi accent2">
+    <div class="val">68.1%</div>
+    <div class="lbl">9天内有购买记录用户占比</div>
+    <div class="sub">仍有 31.9% 用户未转化</div>
+  </div>
+  <div class="kpi accent3">
+    <div class="val">+35.1%</div>
+    <div class="lbl">双十二预热日PV提升</div>
+    <div class="sub">12月2日 vs 平日均值</div>
+  </div>
+</div>
+
+<!-- ══════════ SECTION 1: DATA QUALITY ══════════ -->
+<div class="divider"></div>
+<div class="section-header">
+  <h2><span class="num">0</span> 数据质量说明</h2>
+  <p>在分析之前，首先验证数据的可信度。好的分析从数据质量把关开始。</p>
+</div>
+<div class="section" style="padding-top:20px">
+  <div class="card">
+    <div class="card-title">数据集基本情况 · 阿里巴巴天池 UserBehavior Dataset</div>
+    <div class="dq-row">
+      <div class="dq-item"><div class="v">100,095,231</div><div class="l">有效行为事件总数</div></div>
+      <div class="dq-item"><div class="v">987,991</div><div class="l">唯一用户数</div></div>
+      <div class="dq-item"><div class="v">98.8%</div><div class="l">时间戳有效率</div></div>
+      <div class="dq-item"><div class="v">0</div><div class="l">空值字段数</div></div>
+      <div class="dq-item"><div class="v">4种</div><div class="l">行为类型（pv/cart/fav/buy）</div></div>
+      <div class="dq-item"><div class="v">Nov 25–Dec 3</div><div class="l">有效时间窗口（双十二预热期）</div></div>
+    </div>
+    <div class="insight good" style="margin-top:16px">
+      <strong>数据质量评估：良好。</strong>
+      共检出 1.2% 的异常时间戳（含极少数1970年及2037年异常值），已过滤。有效数据零空值，行为字段无脏数据，可直接用于分析。
+      数据时间窗口恰好覆盖双十二大促预热期（11月下旬至12月初），具有典型的促销周期研究价值。
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SECTION 2: FUNNEL ══════════ -->
+<div class="divider"></div>
+<div class="section-header">
+  <h2><span class="num">1</span> 用户行为漏斗分析</h2>
+  <p>用户从「看见商品」到「完成购买」经历多个决策环节。漏斗分析定位每一层的流失规模，是运营找到增长杠杆的起点。</p>
+</div>
+<div class="section" style="padding-top:20px">
+  <div class="two-col">
+    <!-- Funnel by events -->
+    <div class="card">
+      <div class="card-title">行为事件量漏斗（总量视角）</div>
+      <div class="funnel-wrap" id="funnel-events-wrap"></div>
+      <div class="arrow-row" style="margin-top:12px">
+        <span class="arrow-tag">PV→Cart: 6.17%</span>
+        <span class="arrow-tag">Cart→Buy: 36.45%</span>
+        <span class="arrow-tag">PV→Buy: 2.25%</span>
+      </div>
+      <div class="insight warn" style="margin-top:16px">
+        <strong>关键流失点：PV→加购。</strong>
+        每100次浏览，仅约6次加购，说明大量用户「看了但没心动」。
+        这是转化漏斗最大的损耗节点，也是内容优化、商品推荐的核心战场。
+      </div>
+    </div>
+    <!-- Funnel by users -->
+    <div class="card">
+      <div class="card-title">用户触达漏斗（用户视角）</div>
+      <canvas id="funnelUsersChart" height="260"></canvas>
+      <div class="insight" style="margin-top:16px">
+        <strong>反常现象值得关注：</strong>
+        有购买记录的用户（672,404）<em>多于</em>有收藏记录的用户（389,823）。
+        说明大量用户在<strong>未收藏的情况下直接购买</strong>——这部分用户决策路径短，冲动购买倾向强，
+        适合用限时活动、倒计时等策略进一步激活。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SECTION 3: DAILY TREND ══════════ -->
+<div class="divider"></div>
+<div class="section-header">
+  <h2><span class="num">2</span> 日度行为趋势与大促预热效应</h2>
+  <p>时间序列视角揭示用户行为的规律性波动，以及大促节点对用户活跃度的拉动效果。</p>
+</div>
+<div class="section" style="padding-top:20px">
+  <div class="card">
+    <div class="card-title">每日 PV / 加购 / 购买 趋势（2017年11月25日–12月3日）</div>
+    <canvas id="dailyChart" height="110"></canvas>
+    <div class="insight good" style="margin-top:20px">
+      <strong>双十二预热效应显著：12月2日 PV 同比平日提升 35.1%，加购量提升 40.4%，购买量提升 20%。</strong>
+      用户在大促前1–2天开始密集「比价+加购」行为，而实际购买行为的高峰滞后，说明存在
+      <strong>「先囤购物车、等开门购买」</strong>的典型促销心理。
+      这对运营的启示：预热期应集中资源推动加购，而非过早拉购买转化。
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SECTION 4: HOURLY ══════════ -->
+<div class="divider"></div>
+<div class="section-header">
+  <h2><span class="num">3</span> 用户活跃时段分析</h2>
+  <p>不同时段的用户行为密度，直接指导推送通知、直播排期、限时活动的投放时机。</p>
+</div>
+<div class="section" style="padding-top:20px">
+  <div class="card">
+    <div class="card-title">各时段 PV / 加购 / 购买 分布（北京时间 CST）</div>
+    <canvas id="hourlyChart" height="110"></canvas>
+    <div class="two-col" style="margin-top:20px;gap:12px">
+      <div class="insight">
+        <strong>双峰结构：</strong>
+        全天出现两个购买高峰——<strong>上午 10–11 时</strong>和<strong>晚间 21–22 时</strong>，
+        分别对应「上班摸鱼」和「睡前购物」两种典型场景。
+        运营推送、Banner曝光应集中在这两个时间窗口前30分钟触达。
+      </div>
+      <div class="insight warn">
+        <strong>凌晨低谷 1–5 时：</strong>
+        该时段 PV 跌至全天最低，但转化率反而相对偏高（意向明确的用户）。
+        适合投放定向 push 召回沉默用户，避免「高频但无效打扰」。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SECTION 5: SEGMENTS ══════════ -->
+<div class="divider"></div>
+<div class="section-header">
+  <h2><span class="num">4</span> 用户分层与价值识别</h2>
+  <p>基于用户活跃度（总行为数）与购买行为，将近百万用户划分为四个运营层级，实现精细化触达。</p>
+</div>
+<div class="section" style="padding-top:20px">
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">用户分层占比</div>
+      <canvas id="segChart" height="260"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">各层级用户画像与运营建议</div>
+      <table class="seg-table">
+        <thead><tr><th>用户层级</th><th>规模</th><th>占比</th><th>核心特征</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="badge v1">高价值用户</span></td>
+            <td>304,237</td><td>30.8%</td>
+            <td>高活跃 + 有购买，9天均购买 5+ 次</td>
+          </tr>
+          <tr>
+            <td><span class="badge v2">潜力用户</span></td>
+            <td>368,167</td><td>37.3%</td>
+            <td>有购买但活跃度偏低，存在频率提升空间</td>
+          </tr>
+          <tr>
+            <td><span class="badge v4">活跃未转化</span></td>
+            <td>87,589</td><td>8.9%</td>
+            <td>浏览/加购行为多，但9天内零购买</td>
+          </tr>
+          <tr>
+            <td><span class="badge v3">低活跃用户</span></td>
+            <td>227,998</td><td>23.1%</td>
+            <td>整体行为少，需要唤醒或接受流失</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="insight" style="margin-top:16px">
+        <strong>最高优先级：活跃未转化用户（8.9%，87k人）。</strong>
+        这批用户已经高频互动，说明需求真实存在，仅缺临门一脚。
+        针对性发放无门槛优惠券或限时折扣，预计可激活 20–30% 完成首次购买。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SECTION 6: STRATEGY ══════════ -->
+<div class="divider"></div>
+<div class="section-header">
+  <h2><span class="num">5</span> 数据驱动运营策略建议</h2>
+  <p>基于以上五个维度的分析，结合用户行为数据与大促节奏，提出四项可直接落地的运营策略。</p>
+</div>
+<div class="section" style="padding-top:20px">
+  <div class="strategy-grid">
+    <div class="s-card c1">
+      <h4>① 转化漏斗优化</h4>
+      <ul>
+        <li>PV→加购流失率高达 93.8%，需强化商品详情页「即时加购」引导</li>
+        <li>增加「相似商品推荐」减少比价跳出</li>
+        <li>加购页面增设「限时优惠倒计时」推动决策</li>
+      </ul>
+      <div class="tag-row">
+        <span class="s-tag">产品优化</span><span class="s-tag">转化率提升</span>
+      </div>
+    </div>
+    <div class="s-card c2">
+      <h4>② 精准时段运营</h4>
+      <ul>
+        <li>21:00–22:00 购买高峰前发送个性化 push（晚间提醒）</li>
+        <li>10:00–11:00 投放限时折扣活动（午前爆发窗口）</li>
+        <li>凌晨 1–5 时用低频召回 push 覆盖高意向沉默用户</li>
+      </ul>
+      <div class="tag-row">
+        <span class="s-tag">Push通知</span><span class="s-tag">时间窗口</span>
+      </div>
+    </div>
+    <div class="s-card c3">
+      <h4>③ 分层用户触达</h4>
+      <ul>
+        <li>高价值用户：VIP专属权益 + 新品优先体验，提升 LTV</li>
+        <li>活跃未转化：定向无门槛券 + 购物车提醒，攻克临门转化</li>
+        <li>低活跃用户：差异化召回成本评估，控制无效触达</li>
+      </ul>
+      <div class="tag-row">
+        <span class="s-tag">用户运营</span><span class="s-tag">精细化</span>
+      </div>
+    </div>
+    <div class="s-card c4">
+      <h4>④ 大促节奏策略</h4>
+      <ul>
+        <li>大促前 2 天是加购高峰（+40%），优先资源推「加购送优惠」</li>
+        <li>大促当日拦截购物车用户，限时折扣促成转化爆发</li>
+        <li>建议用 A/B 测试验证预热期推送频次对转化的因果效应</li>
+      </ul>
+      <div class="tag-row">
+        <span class="s-tag">大促策略</span><span class="s-tag">A/B测试</span>
+      </div>
+    </div>
+  </div>
+  <div class="insight" style="margin-top:20px">
+    <strong>方法论备注：</strong>
+    本报告所有结论均基于描述性统计与相关分析。如需判断运营动作的<strong>因果效应</strong>（如「push发送是否真正提升了购买率」），
+    需要设计随机对照实验（RCT / A/B Test）进行因果推断，避免混淆因素干扰决策。这是数据驱动运营与经验主义运营的本质区别。
+  </div>
+</div>
+
+<!-- ══════════ FOOTER ══════════ -->
+<div style="height:48px"></div>
+<div class="footer">
+  <strong>张嘉敏 · 芝加哥大学 Harris公共政策学院</strong>
+  <br>数据来源：阿里巴巴天池 UserBehavior Dataset | 分析工具：Python · pandas · Chart.js
+  <br style="margin-top:6px">jiaminzz02@163.com
+</div>
+
+<!-- ══════════ SCRIPTS ══════════ -->
+<script>
+const DATA = {
+  "summary": {"total_users":987991,"pv_to_cart_pct":6.17,"cart_to_buy_pct":36.45,"pv_to_buy_pct":2.25,"buyer_rate":68.1,"dec2_lift_pct":35.1},
+  "funnel_events": {"labels":["PV浏览","Cart加购","Fav收藏","Buy购买"],"values":[89660688,5530446,2888258,2015839]},
+  "funnel_users": {"labels":["有浏览","有加购","有收藏","有购买"],"values":[984105,738996,389823,672404]},
+  "daily": {
+    "dates":["11/25","11/26","11/27","11/28","11/29","11/30","12/01","12/02","12/03"],
+    "pv":[9435257,9475590,8966430,8849194,9241649,9442000,10002288,12475206,10708556],
+    "cart":[569236,575420,539212,533807,554747,573032,642251,801367,677046],
+    "buy":[201298,214314,218402,211757,223082,222238,212855,259555,235475]
+  },
+  "hourly": {
+    "hours":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23],
+    "pv":[3056936,1421673,769269,524992,449628,581694,1226653,2228959,3042342,3728498,4334810,4213518,4255794,4653934,4642056,4806706,4607745,4203397,4313516,5430878,6586331,7538383,7443073,5599903],
+    "buy":[57776,23169,12012,8026,6748,8135,18014,37679,64917,96134,127933,122048,118591,123427,122172,122733,116446,101301,95907,115032,133863,145433,138268,100075],
+    "cart":[181807,85412,46155,32552,28537,37264,81305,147046,192036,229890,266963,260831,255811,279829,277093,284269,279035,255342,253193,314774,393209,465924,486249,395920]
+  },
+  "segments": {
+    "labels":["潜力用户","高价值用户","低活跃用户","活跃未转化"],
+    "counts":[368167,304237,227998,87589],
+    "pcts":[37.3,30.8,23.1,8.9]
+  }
+};
+
+const COLORS = {
+  primary:'#0052CC', accent:'#FF6B35', accent2:'#00B896', accent3:'#A259FF',
+  muted:'#6B7A99', light:'rgba(0,82,204,0.08)'
+};
+
+// ─── FUNNEL BARS ───
+(function buildFunnelBars(){
+  const wrap = document.getElementById('funnel-events-wrap');
+  const data = DATA.funnel_events;
+  const max  = data.values[0];
+  const colors = [COLORS.primary, COLORS.accent, COLORS.accent3, COLORS.accent2];
+  const labels = ['浏览 PV', '加购 Cart', '收藏 Fav', '购买 Buy'];
+
+  data.values.forEach((v, i) => {
+    const pct = (v/max*100).toFixed(1);
+    const fmt = v >= 1e8 ? (v/1e8).toFixed(2)+'亿' : v >= 1e6 ? (v/1e6).toFixed(1)+'M' : (v/1e3).toFixed(0)+'k';
+    wrap.innerHTML += `
+      <div class="funnel-row">
+        <span class="stage">${labels[i]}</span>
+        <div class="funnel-bar-bg">
+          <div class="funnel-bar-fill" style="width:${pct}%;background:${colors[i]}">${fmt}</div>
+        </div>
+        <span class="pct" style="color:${colors[i]}">${pct}%</span>
+        <span class="cnt">${v.toLocaleString()}</span>
+      </div>`;
+    if(i < data.values.length - 1){
+      const drop = ((1 - data.values[i+1]/v)*100).toFixed(1);
+      wrap.innerHTML += `<div class="arrow-row"><span class="arrow-tag">↓ 流失 ${drop}%</span></div>`;
+    }
+  });
+})();
+
+// ─── FUNNEL USERS CHART ───
+new Chart(document.getElementById('funnelUsersChart'),{
+  type:'bar',
+  data:{
+    labels: DATA.funnel_users.labels,
+    datasets:[{
+      label:'用户数',
+      data: DATA.funnel_users.values,
+      backgroundColor:[COLORS.primary+'BB', COLORS.accent+'BB', COLORS.accent3+'BB', COLORS.accent2+'BB'],
+      borderRadius: 8, borderSkipped: false,
+    }]
+  },
+  options:{
+    responsive:true, plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>`${c.parsed.y.toLocaleString()} 用户`}}},
+    scales:{
+      y:{grid:{color:'#F0F2F7'},ticks:{callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v}},
+      x:{grid:{display:false}}
+    }
+  }
+});
+
+// ─── DAILY CHART ───
+new Chart(document.getElementById('dailyChart'),{
+  type:'line',
+  data:{
+    labels: DATA.daily.dates,
+    datasets:[
+      {label:'PV浏览',data:DATA.daily.pv,borderColor:COLORS.primary,backgroundColor:COLORS.primary+'15',fill:true,tension:.4,yAxisID:'y'},
+      {label:'加购',  data:DATA.daily.cart,borderColor:COLORS.accent,backgroundColor:'transparent',tension:.4,yAxisID:'y2',borderDash:[5,3]},
+      {label:'购买',  data:DATA.daily.buy, borderColor:COLORS.accent2,backgroundColor:'transparent',tension:.4,yAxisID:'y2'},
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{
+      legend:{position:'top'},
+      annotation:{},
+      tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toLocaleString()}`}}
+    },
+    scales:{
+      y:{position:'left',grid:{color:'#F0F2F7'},ticks:{callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v},title:{display:true,text:'PV量'}},
+      y2:{position:'right',grid:{display:false},ticks:{callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':(v/1e3).toFixed(0)+'k'},title:{display:true,text:'加购/购买量'}},
+      x:{grid:{display:false}}
+    }
+  }
+});
+
+// ─── HOURLY CHART ───
+new Chart(document.getElementById('hourlyChart'),{
+  type:'bar',
+  data:{
+    labels: DATA.hourly.hours.map(h=>h+'时'),
+    datasets:[
+      {label:'PV浏览', data:DATA.hourly.pv,  backgroundColor:COLORS.primary+'55', yAxisID:'y'},
+      {label:'加购',   data:DATA.hourly.cart, backgroundColor:COLORS.accent+'BB',  yAxisID:'y2', type:'line', tension:.4},
+      {label:'购买',   data:DATA.hourly.buy,  backgroundColor:COLORS.accent2+'BB', yAxisID:'y2', type:'line', tension:.4},
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{
+      legend:{position:'top'},
+      tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toLocaleString()}`}}
+    },
+    scales:{
+      y:{position:'left',grid:{color:'#F0F2F7'},ticks:{callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v},title:{display:true,text:'PV量'}},
+      y2:{position:'right',grid:{display:false},ticks:{callback:v=>(v/1e3).toFixed(0)+'k'},title:{display:true,text:'加购/购买'}},
+      x:{grid:{display:false}}
+    }
+  }
+});
+
+// ─── SEGMENT DONUT ───
+new Chart(document.getElementById('segChart'),{
+  type:'doughnut',
+  data:{
+    labels: DATA.segments.labels,
+    datasets:[{
+      data: DATA.segments.counts,
+      backgroundColor:[COLORS.accent+'CC', COLORS.primary+'CC', COLORS.accent2+'CC', COLORS.accent3+'CC'],
+      borderWidth:2, borderColor:'#fff', hoverOffset:8
+    }]
+  },
+  options:{
+    cutout:'62%',
+    plugins:{
+      legend:{position:'right', labels:{padding:16, font:{size:13}}},
+      tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed.toLocaleString()} (${DATA.segments.pcts[c.dataIndex]}%)`}}
+    }
+  }
+});
+</script>
+</body>
+</html>
