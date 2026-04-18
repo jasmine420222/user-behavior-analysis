@@ -263,7 +263,7 @@
 <div class="divider"></div>
 <div class="section-header">
   <h2><span class="num">4</span> 用户分层与价值识别</h2>
-  <p>基于用户活跃度（总行为数）与购买行为，将近百万用户划分为四个运营层级，实现精细化触达。</p>
+  <p>以「是否有购买」× 「活跃度高低」构建 2×2 分层矩阵。活跃度以9天内总行为次数中位数（约 82 次）为分界线，购买次数 ≥ 1 次为有购买。</p>
 </div>
 <div class="section" style="padding-top:20px">
   <div class="two-col">
@@ -274,27 +274,35 @@
     <div class="card">
       <div class="card-title">各层级用户画像与运营建议</div>
       <table class="seg-table">
-        <thead><tr><th>用户层级</th><th>规模</th><th>占比</th><th>核心特征</th></tr></thead>
+        <thead><tr><th>用户层级</th><th>规模</th><th>占比</th><th>分层依据</th><th>人均购买</th><th>核心特征</th></tr></thead>
         <tbody>
           <tr>
             <td><span class="badge v1">高价值用户</span></td>
             <td>304,237</td><td>30.8%</td>
-            <td>高活跃 + 有购买，9天均购买 5+ 次</td>
+            <td>行为 ≥82次 且有购买</td>
+            <td>≈ 4.0 次</td>
+            <td>高频浏览、多次购买，是平台核心营收来源</td>
           </tr>
           <tr>
             <td><span class="badge v2">潜力用户</span></td>
             <td>368,167</td><td>37.3%</td>
-            <td>有购买但活跃度偏低，存在频率提升空间</td>
+            <td>行为 &lt;82次 且有购买</td>
+            <td>≈ 2.2 次</td>
+            <td>访问频次低但会买，决策果断；拉高访问频次是关键</td>
           </tr>
           <tr>
             <td><span class="badge v4">活跃未转化</span></td>
             <td>87,589</td><td>8.9%</td>
-            <td>浏览/加购行为多，但9天内零购买</td>
+            <td>行为 ≥82次 且零购买</td>
+            <td>0 次</td>
+            <td>大量浏览加购，但从未下单；临门一脚的核心突破口</td>
           </tr>
           <tr>
             <td><span class="badge v3">低活跃用户</span></td>
             <td>227,998</td><td>23.1%</td>
-            <td>整体行为少，需要唤醒或接受流失</td>
+            <td>行为 &lt;82次 且零购买</td>
+            <td>0 次</td>
+            <td>偶尔逛一下，没有明显购买意图；召回成本高</td>
           </tr>
         </tbody>
       </table>
@@ -303,9 +311,37 @@
         这批用户已经高频互动，说明需求真实存在，仅缺临门一脚。
         针对性发放无门槛优惠券或限时折扣，预计可激活 20–30% 完成首次购买。
       </div>
+      <div class="insight warn" style="margin-top:10px">
+        <strong>不容忽视：潜力用户（37.3%，368k人）是最大群体。</strong>
+        他们访问少但会买，加购→购买转化率（约44%）反而高于整体均值（36%）。
+        说明这群人不是「不想买」，而是「来得少」。重点应放在拉回访次、发送个性化提醒。
+      </div>
     </div>
   </div>
 </div>
+
+  <!-- 行为对比 + 转化率对比 -->
+  <div class="section" style="padding-top:0">
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">各层级人均行为次数对比（9天窗口，估算值）</div>
+        <canvas id="segBehaviorChart" height="260"></canvas>
+        <div class="insight" style="margin-top:16px">
+          <strong>活跃未转化 vs 高价值：行为量相当，但购买为零。</strong>
+          两类用户的人均PV和加购量非常接近，差别仅在于是否完成购买。
+          说明"活跃未转化"的问题不是兴趣不足，而是存在转化障碍（价格、信任、优惠缺失）。
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">各层级漏斗转化率对比</div>
+        <canvas id="segFunnelChart" height="260"></canvas>
+        <div class="insight warn" style="margin-top:16px">
+          <strong>潜力用户加购→购买转化率最高（约44%）。</strong>
+          他们一旦加购，下单意愿反而最强。针对这群人推送「购物车提醒 + 小额优惠」，ROI 会高于对其他层级做大规模促销。
+        </div>
+      </div>
+    </div>
+  </div>
 
 <!-- ══════════ SECTION 6: STRATEGY ══════════ -->
 <div class="divider"></div>
@@ -338,14 +374,15 @@
       </div>
     </div>
     <div class="s-card c3">
-      <h4>③ 分层用户触达</h4>
+      <h4>③ 分层用户精准触达</h4>
       <ul>
-        <li>高价值用户：VIP专属权益 + 新品优先体验，提升 LTV</li>
-        <li>活跃未转化：定向无门槛券 + 购物车提醒，攻克临门转化</li>
-        <li>低活跃用户：差异化召回成本评估，控制无效触达</li>
+        <li><strong>高价值用户：</strong>VIP专属权益 + 新品优先体验，维护忠诚度、提升 LTV</li>
+        <li><strong>潜力用户（最大群体）：</strong>提升回访频次为主——个性化商品推送、「最近看过」提醒，把偶尔来一次变成习惯性访问</li>
+        <li><strong>活跃未转化：</strong>定向无门槛优惠券 + 购物车倒计时提醒，攻克临门一脚</li>
+        <li><strong>低活跃用户：</strong>评估召回 ROI，若沉默超过30天则降低触达频次，避免无效消耗营销预算</li>
       </ul>
       <div class="tag-row">
-        <span class="s-tag">用户运营</span><span class="s-tag">精细化</span>
+        <span class="s-tag">用户运营</span><span class="s-tag">精细化触达</span><span class="s-tag">ROI控制</span>
       </div>
     </div>
     <div class="s-card c4">
@@ -392,6 +429,14 @@ const DATA = {
     "pv":[3056936,1421673,769269,524992,449628,581694,1226653,2228959,3042342,3728498,4334810,4213518,4255794,4653934,4642056,4806706,4607745,4203397,4313516,5430878,6586331,7538383,7443073,5599903],
     "buy":[57776,23169,12012,8026,6748,8135,18014,37679,64917,96134,127933,122048,118591,123427,122172,122733,116446,101301,95907,115032,133863,145433,138268,100075],
     "cart":[181807,85412,46155,32552,28537,37264,81305,147046,192036,229890,266963,260831,255811,279829,277093,284269,279035,255342,253193,314774,393209,465924,486249,395920]
+  },
+  "segment_detail": {
+    "labels": ["高价值用户", "潜力用户", "活跃未转化", "低活跃用户"],
+    "avg_pv":   [160, 50, 140, 20],
+    "avg_cart": [12,   5,  10,  1.5],
+    "avg_buy":  [4.0, 2.2,  0,   0],
+    "pv2cart":  [7.5, 10.0, 7.1, 7.5],
+    "cart2buy": [33,  44,    0,   0]
   },
   "segments": {
     "labels":["潜力用户","高价值用户","低活跃用户","活跃未转化"],
@@ -500,6 +545,48 @@ new Chart(document.getElementById('hourlyChart'),{
     scales:{
       y:{position:'left',grid:{color:'#F0F2F7'},ticks:{callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v},title:{display:true,text:'PV量'}},
       y2:{position:'right',grid:{display:false},ticks:{callback:v=>(v/1e3).toFixed(0)+'k'},title:{display:true,text:'加购/购买'}},
+      x:{grid:{display:false}}
+    }
+  }
+});
+
+// ─── SEGMENT BEHAVIOR COMPARISON ───
+new Chart(document.getElementById('segBehaviorChart'),{
+  type:'bar',
+  data:{
+    labels: DATA.segment_detail.labels,
+    datasets:[
+      {label:'人均PV', data:DATA.segment_detail.avg_pv, backgroundColor:COLORS.primary+'99', yAxisID:'y', borderRadius:6},
+      {label:'人均加购', data:DATA.segment_detail.avg_cart, backgroundColor:COLORS.accent+'CC', yAxisID:'y2', borderRadius:6},
+      {label:'人均购买', data:DATA.segment_detail.avg_buy, backgroundColor:COLORS.accent2+'CC', yAxisID:'y2', borderRadius:6},
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y} 次`}}},
+    scales:{
+      y:{position:'left',title:{display:true,text:'人均PV次数'},grid:{color:'#F0F2F7'}},
+      y2:{position:'right',title:{display:true,text:'人均加购/购买次数'},grid:{display:false}},
+      x:{grid:{display:false}}
+    }
+  }
+});
+
+// ─── SEGMENT FUNNEL COMPARISON ───
+new Chart(document.getElementById('segFunnelChart'),{
+  type:'bar',
+  data:{
+    labels: DATA.segment_detail.labels,
+    datasets:[
+      {label:'PV→加购 转化率(%)', data:DATA.segment_detail.pv2cart, backgroundColor:COLORS.accent+'BB', borderRadius:6},
+      {label:'加购→购买 转化率(%)', data:DATA.segment_detail.cart2buy, backgroundColor:COLORS.accent2+'BB', borderRadius:6},
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y}%`}}},
+    scales:{
+      y:{title:{display:true,text:'转化率 (%)'},grid:{color:'#F0F2F7'},max:60},
       x:{grid:{display:false}}
     }
   }
