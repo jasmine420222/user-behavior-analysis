@@ -156,7 +156,7 @@
 <div class="divider"></div>
 <div class="section-header">
   <h2><span class="num">0</span> 数据质量说明</h2>
-  <p>在分析之前，首先验证数据的可信度。好的分析从数据质量把关开始。</p>
+  <p>在分析之前，首先验证数据的可信度。</p>
 </div>
 <div class="section" style="padding-top:20px">
   <div class="card">
@@ -501,13 +501,13 @@ new Chart(document.getElementById('funnelUsersChart'),{
 
 // ─── DAILY CHART ───
 new Chart(document.getElementById('dailyChart'),{
-  type:'line',
+  type:'bar',
   data:{
     labels: DATA.daily.dates,
     datasets:[
-      {label:'PV浏览',data:DATA.daily.pv,borderColor:COLORS.primary,backgroundColor:COLORS.primary+'15',fill:true,tension:.4,yAxisID:'y'},
-      {label:'加购',  data:DATA.daily.cart,borderColor:COLORS.accent,backgroundColor:'transparent',tension:.4,yAxisID:'y2',borderDash:[5,3]},
-      {label:'购买',  data:DATA.daily.buy, borderColor:COLORS.accent2,backgroundColor:'transparent',tension:.4,yAxisID:'y2'},
+      {label:'PV浏览',data:DATA.daily.pv,backgroundColor:COLORS.primary+'66',borderRadius:6,yAxisID:'y'},
+      {label:'加购',  data:DATA.daily.cart,borderColor:COLORS.accent,backgroundColor:'transparent',tension:.4,yAxisID:'y2',type:'line',borderDash:[5,3]},
+      {label:'购买',  data:DATA.daily.buy, borderColor:COLORS.accent2,backgroundColor:'transparent',tension:.4,yAxisID:'y2',type:'line'},
     ]
   },
   options:{
